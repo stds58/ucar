@@ -1,0 +1,183 @@
+#Правила .gitignore обрабатываются сверху вниз
+
+# Локальные директории Terraform
+# Local .terraform directories
+# игнорирование всех поддиректорий .terraform/ на любом уровне вложенности
+**/.terraform/*
+########################
+
+# Файлы состояния (tfstate)
+# .tfstate files
+# Игнорирование terraform.tfstate и его резервных копий
+*.tfstate
+*.tfstate.*
+# Игнорирование локальных файлов состояния. Избыточно,уже есть
+# terraform.tfstate
+# terraform.tfstate.backup
+########################
+
+# Логи сбоев
+# Игнорирование логов и кэша
+# Crash log files
+# вариант явно указывает шаблоны для логов сбоев (crash.*.log). если вы хотите сохранить возможность коммитить другие логи (например, пользовательские)
+crash.log
+crash.*.log
+
+# вариант более общий. просто игнорирует все файлы с расширением .log
+crash.log
+*.log
+########################
+
+# Файлы переменных (tfvars)
+# Игнорирование временных файлов Terraform
+# Exclude all .tfvars files, which are likely to contain sensitive data, such as
+# password, private keys, and other secrets. These should not be part of version
+# control as they are data points which are potentially sensitive and subject
+# to change depending on the environment.
+*.tfvars
+*.tfvars.json
+# *.tfvars*  вариант может случайно захватить файлы с другими расширениями, начинающимися на .tfvars (например, .tfvarssomeotherext).
+########################
+
+# Override-файлы
+# Игнорирование локальных переменных и конфигураций
+# Ignore override files as they are usually used to override resources locally and so
+# are not checked in
+# вариант явно указывает конкретные типы override-файлов (override.tf, *_override.tf), что более точное решение. вариант лучше, если вы хотите быть более строгими в игнорировании файлов.
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# вариант предполагает использование специальных директорий (local Overrides/ или overrides/), что менее гибко. вариант удобен, если вы организуете override-файлы в отдельных директориях.
+# local Overrides/*.tf
+# overrides/*.tf
+
+#Строка !example_override.tf в .gitignore представляет собой исключение  из правил игнорирования
+# Include override files you do wish to add to version control using negated pattern
+# !example_override.tf
+########################
+
+# Lock-файлы
+"# вариант явно игнорирует lock-файл .terraform.tfstate.lock.info, который используется Terraform для блокировки состояния во время операций. Это важно для многопользовательских сред.
+Что лучше? : Ваш вариант правильнее, так как lock-файл не должен попадать в репозиторий."
+# Ignore transient lock info files created by terraform apply
+.terraform.tfstate.lock.info
+########################
+
+# Планы Terraform (tfplan)
+# вариант содержит комментарий, объясняющий, почему нужно игнорировать планы (*.tfplan). вариант полезнее для командной работы, так как комментарий помогает другим разработчикам понять причины.
+# Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
+# example: *tfplan*
+*tfplan*
+
+# вариант просто добавляет правило без пояснений.
+# *.tfplan
+########################
+
+# Конфигурационные файлы CLI
+# вариант игнорирует конфигурационные файлы CLI (terraform.rc и .terraformrc), которые содержат локальную конфигурацию Terraform. Это важно для безопасности.
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+########################
+
+# Игнорирование автосохранений и файлов редакторов
+.*swp
+.*swo
+*~
+
+# Игнорирование файлов, созданных IDE (например, VSCode)
+.vscode/
+.idea/
+
+# Игнорирование файлов, созданных операционной системой
+.DS_Store
+Thumbs.db
+
+# Игнорирование сгенерированных файлов документации
+docs/
+!docs/description.txt
+########################
+
+
+# Исключение временных файлов
+*.retry
+*.tmp
+*~
+*.swp
+*.swo
+*.swn
+*.un~
+Session.vim
+
+# Исключение Python-файлов и кэша
+*/__pycache__
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Исключение логов
+*.log
+
+# Исключение секретных данных
+.vault_pass
+vault_password_file
+*.vault
+keys/
+*.pem
+authorized_key.json
+
+# Исключение файлов, созданных IDE/редакторами
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+# Другие IDE
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Vim временные файлы
+*.un~
+Session.vim
+
+# Исключение Ansible-специфичных файлов
+ansible.cfg
+inventory/*
+!inventory/hosts
+roles/*/files/*
+roles/*/templates/*
+group_vars/*.yml
+host_vars/*.yml
+
+# Исключение локальных конфигураций
+.local*
+local.yml
+local_vars.yml
+
+# Исключение секретных переменных
+secrets.yml
+vars/secrets.yml
+group_vars/secrets.yml
+host_vars/secrets.yml
+
+# Исключение артефактов сборки
+dist/
+build/
+
+# Исключение виртуальных окружений
+venv/
+ENV/
+env/
+.venv/
+.env/
+
+# alembic
+#alembic/versions/*
+
+
+# прочие папки и файлы
