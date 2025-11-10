@@ -1,0 +1,79 @@
+services:
+  load-test:
+    container_name: load-test
+    profiles:
+      - load-test
+    image: williamyeh/wrk
+    command: ["-t", "2", "-c", "120", "-d", "20s", "--latency", "http://localhost:8000/v1/incident"]
+    depends_on:
+      ucar-app:
+        condition: service_started
+    network_mode: service:ucar-app
+
+  ucar-app:
+    container_name: ucar-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: "ucar-db"
+      DEBUG: "false"
+    env_file:
+      - path: .env
+        required: true
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+    depends_on:
+      ucar-db:
+        condition: service_healthy
+    networks:
+      ucar_network:
+        ipv4_address: 174.21.0.2
+    restart: unless-stopped
+
+  ucar-db:
+    container_name: ucar-db
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: '4g'
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    env_file:
+      - path: .env
+        required: true
+    ports:
+      - "${DB_PORT_EXTERNAL}:${DB_PORT_INTERNAL}"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $DB_USER -d $DB_NAME" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      ucar_network:
+        ipv4_address: 174.21.0.3
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+    driver: local
+
+networks:
+  ucar_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 174.21.0.0/24
+          gateway: 174.21.0.1

@@ -1,0 +1,82 @@
+"""абстракция над крудами"""
+
+from typing import ClassVar, Generic, List, Optional
+from uuid import UUID
+import structlog
+from pydantic import BaseModel as PydanticModel
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.exceptions.base import ObjectsNotFoundByIDError
+from app.crud.mixins.query_mixin import QueryMixin
+from app.crud.mixins.types import (
+    ModelType,
+    CreateSchemaType,
+    UpdateSchemaType,
+    FilterSchemaType,
+)
+
+
+logger = structlog.get_logger()
+
+
+class BaseDAO(
+    QueryMixin, Generic[ModelType, CreateSchemaType, UpdateSchemaType, FilterSchemaType]
+):
+    """базовый класс"""
+
+    model: ClassVar[type[ModelType]]
+    create_schema: ClassVar[type[CreateSchemaType]]
+    update_schema: ClassVar[type[UpdateSchemaType]]
+    filter_schema: ClassVar[type[FilterSchemaType]]
+    pydantic_model: ClassVar[type[PydanticModel]]
+
+    @classmethod
+    async def find_many(
+        cls, session: AsyncSession, filters: Optional[FilterSchemaType] = None
+    ) -> List[PydanticModel]:
+        """найти по фильтру"""
+        query = select(cls.model)
+        query = cls._build_query(query, filters)
+        result = await session.execute(query)
+        results = result.unique().scalars().all()
+        return [
+            cls.pydantic_model.model_validate(obj, from_attributes=True)
+            for obj in results
+        ]
+
+    @classmethod
+    async def add_one(
+        cls, session: AsyncSession, values: CreateSchemaType
+    ) -> PydanticModel:
+        """добавить запись"""
+        filters_dict = values.model_dump(exclude_unset=True)
+        new_instance = cls.model(**filters_dict)
+        session.add(new_instance)
+        await session.flush()
+        await session.refresh(new_instance)
+        return cls.pydantic_model.model_validate(new_instance, from_attributes=True)
+
+    @classmethod
+    async def update_one(
+        cls, model_id: UUID, values: UpdateSchemaType, session: AsyncSession
+    ) -> PydanticModel:
+        """обновить запись"""
+        filters_dict = values.model_dump(exclude_unset=True)
+        stmt = (
+            update(cls.model)
+            .where(cls.model.id == model_id)
+            .values(**filters_dict)
+            .returning(cls.model)
+        )
+        result = await session.execute(stmt)
+        obj = result.scalar_one_or_none()
+
+        if obj is None:
+            logger.error(
+                "ObjectsNotFoundByIDError on update",
+                model_id=model_id,
+                error="Запрашиваемый объект не найден",
+            )
+            raise ObjectsNotFoundByIDError
+
+        return cls.pydantic_model.model_validate(obj, from_attributes=True)

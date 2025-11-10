@@ -175,7 +175,7 @@ ENV/
 env/
 .venv/
 .env/
-
+.env
 # alembic
 #alembic/versions/*
 
