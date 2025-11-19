@@ -1,11 +1,11 @@
 import time
 from uuid import uuid4
-import structlog
+#import structlog
 from structlog.contextvars import bind_contextvars, clear_contextvars
 from fastapi import Request
 
 
-logger = structlog.get_logger()
+#logger = structlog.get_logger()
 
 
 def get_client_ip(request: Request) -> str:
@@ -19,7 +19,7 @@ def get_client_ip(request: Request) -> str:
 async def logging_middleware(request: Request, call_next):
     clear_contextvars()
 
-    start_time = time.time()
+    #start_time = time.time()
 
     ip = get_client_ip(request)
     bind_contextvars(ip=ip)
@@ -30,11 +30,11 @@ async def logging_middleware(request: Request, call_next):
 
     response = await call_next(request)
 
-    process_time = time.time() - start_time
-    logger.info(
-        "Request completed",
-        status_code=response.status_code,
-        process_time=process_time,
-    )
+    # process_time = time.time() - start_time
+    # logger.info(
+    #     "Request completed",
+    #     status_code=response.status_code,
+    #     process_time=process_time,
+    # )
 
     return response

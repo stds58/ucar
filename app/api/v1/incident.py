@@ -3,7 +3,7 @@ routers for incident
 """
 
 from uuid import UUID
-import structlog
+#import structlog
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.incident import (
@@ -21,7 +21,7 @@ from app.services.incident import (
 from app.dependencies.get_db import connection
 
 
-logger = structlog.get_logger()
+#logger = structlog.get_logger()
 
 
 router = APIRouter()
@@ -33,12 +33,12 @@ async def get_incidents(
     filters: SchemaIncidentFilter = Depends(),
 ):
     """получение всех инцидентов"""
-    logger.info("Get incidents", filters=filters)
+    #logger.info("Get incidents", filters=filters)
     incident = await find_many_incident(
         filters=filters,
         session=session,
     )
-    logger.info("Geted incidents", filters=filters)
+    #logger.info("Geted incidents", filters=filters)
     return incident
 
 
@@ -48,12 +48,12 @@ async def create_incident(
     session: AsyncSession = Depends(connection()),
 ):
     """добавить новый инцидент"""
-    logger.info("Add incident", data=data)
+    #logger.info("Add incident", data=data)
     incident = await add_one_incident(
         data=data,
         session=session,
     )
-    logger.info("Added incident", data=data)
+    #logger.info("Added incident", data=data)
     return incident
 
 
@@ -66,11 +66,11 @@ async def edit_incident(
     session: AsyncSession = Depends(connection()),
 ):
     """поменять статус инцидента"""
-    logger.info("Update incident", data=data, model_id=incident_id)
+    #logger.info("Update incident", data=data, model_id=incident_id)
     updated_incident = await update_one_incident(
         data=data,
         session=session,
         incident_id=incident_id,
     )
-    logger.info("Updated incident", data=data, model_id=incident_id)
+    #logger.info("Updated incident", data=data, model_id=incident_id)
     return updated_incident

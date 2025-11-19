@@ -8,25 +8,25 @@
     python -m uvicorn app.main:app --host 0.0.0.0 --port 80
 """
 
-import logging
-import structlog
+#import logging
+#import structlog
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.base_router import v1_router
 from app.core.config import settings
-from app.core.structlog_configure import configure_logging
-from app.middleware.middleware_log import logging_middleware
+#from app.core.structlog_configure import configure_logging
+#from app.middleware.middleware_log import logging_middleware
 
 
 # Подавляем логи Uvicorn (оставляем только ошибки или полностью отключаем)
-if not settings.DEBUG:
-    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
-    logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
-
-
-configure_logging()
-logger = structlog.get_logger()
+# if not settings.DEBUG:
+#     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+#     logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
+#
+#
+# configure_logging()
+# logger = structlog.get_logger()
 
 
 app = FastAPI(
@@ -42,7 +42,7 @@ app = FastAPI(
 app.add_middleware(
     SessionMiddleware, secret_key=settings.SESSION_MIDDLEWARE_SECRET_KEY, max_age=3600
 )
-app.middleware("http")(logging_middleware)
+#app.middleware("http")(logging_middleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -72,7 +72,7 @@ def root():
 
 
 # if __name__ == "__main__":
-    # granian --interface asgi --host 127.0.0.1 --port 8000 app.main:app
+    # granian --interface asgi --host 127.0.0.1 --port 8000 --workers 6 --no-access-log app.main:app
     # import uvicorn
     #
     # uvicorn.run("app.main:app", host="0.0.0.0", port=8000)

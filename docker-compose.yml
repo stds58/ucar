@@ -4,10 +4,15 @@ services:
     profiles:
       - load-test
     image: williamyeh/wrk
-    command: ["-t", "2", "-c", "120", "-d", "20s", "--latency", "http://localhost:8000/v1/incident"]
+    command: ["-t", "2", "-c", "78", "-d", "20s", "--latency", "http://ucar-app:8000/v1/incident"]
     depends_on:
       ucar-app:
         condition: service_started
+    logging:
+      driver: "gelf"
+      options:
+        gelf-address: "udp://172.21.0.6:5000"
+        tag: "fastapi"
     network_mode: service:ucar-app
 
   ucar-app:

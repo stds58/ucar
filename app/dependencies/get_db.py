@@ -3,7 +3,7 @@
 """
 
 from typing import AsyncGenerator
-import structlog
+#import structlog
 from structlog.contextvars import bind_contextvars
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError, OperationalError
@@ -19,7 +19,7 @@ from app.exceptions.base import (
 )
 
 
-logger = structlog.get_logger()
+#logger = structlog.get_logger()
 async_session_maker = create_session_factory(settings.DATABASE_URL)
 
 
@@ -32,43 +32,43 @@ def connection():
         async with get_session_with_isolation(
             async_session_maker, isolation_level="READ COMMITTED"
         ) as session:
-            session_id_obj = await session.execute(text("SELECT pg_backend_pid()"))
-            session_id = session_id_obj.scalar_one()
-            transaction_id_obj = await session.execute(text("SELECT txid_current()"))
-            transaction_id = transaction_id_obj.scalar()
+            #session_id_obj = await session.execute(text("SELECT pg_backend_pid()"))
+            #session_id = session_id_obj.scalar_one()
+            #transaction_id_obj = await session.execute(text("SELECT txid_current()"))
+            #transaction_id = transaction_id_obj.scalar()
             try:
-                bind_contextvars(
-                    session_id=session_id,
-                    transaction_id=transaction_id,
-                )
+                # bind_contextvars(
+                #     session_id=session_id,
+                #     transaction_id=transaction_id,
+                # )
                 yield session
             except IntegrityError as exc:
-                logger.error("IntegrityError", error=str(exc))
+                #logger.error("IntegrityError", error=str(exc))
                 if session.in_transaction():
                     await session.rollback()
                 raise IntegrityErrorException from exc
             except OperationalError as exc:
                 # Проверяем, является ли ошибка serialization failure
                 if hasattr(exc.orig, "pgcode") and exc.orig.pgcode == "40001":
-                    logger.warning(
-                        "Serialization failure (40001), should retry transaction"
-                    )
+                    # logger.warning(
+                    #     "Serialization failure (40001), should retry transaction"
+                    # )
                     if session.in_transaction():
                         await session.rollback()
                     # Но здесь нельзя просто "повторить" — нужно перезапустить ВСЮ транзакцию
                     raise SerializationFailureException from exc
-                logger.error("OperationalError (non-serialization)", error=str(exc))
+                #logger.error("OperationalError (non-serialization)", error=str(exc))
                 raise DatabaseConnectionException from exc
             except (ConnectionRefusedError, OSError) as exc:
-                logger.error("ConnectionRefusedError, OSError", error=str(exc))
+                #logger.error("ConnectionRefusedError, OSError", error=str(exc))
                 raise CustomInternalServerException from exc
             except SQLAlchemyError as exc:
-                logger.error(" SQLAlchemyError", error=str(exc))
+                #logger.error(" SQLAlchemyError", error=str(exc))
                 if session.in_transaction():
                     await session.rollback()
                 raise SqlalchemyErrorException from exc
             except Exception as exc:
-                logger.error("Other exception", error=str(exc))
+                #logger.error("Other exception", error=str(exc))
                 if session.in_transaction():
                     await session.rollback()
                 raise

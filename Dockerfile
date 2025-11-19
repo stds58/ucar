@@ -35,4 +35,4 @@ ENV PATH="$WORKDIR/.venv/bin:$PATH"
 USER appuser
 
 ENTRYPOINT ["/bin/sh", "-c", "alembic upgrade head && exec \"$@\"", "migrate-and-run"]
-CMD ["granian", "--interface", "asgi", "--host", "0.0.0.0", "--port", "8000", "--workers", "6", "app.main:app"]
+CMD ["granian", "--interface", "asgi", "--host", "0.0.0.0", "--port", "8000", "--workers", "6", "--no-access-log", "app.main:app"]
