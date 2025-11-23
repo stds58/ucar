@@ -26,8 +26,7 @@ services:
       DB_HOST: "ucar-db"
       DEBUG: "false"
     env_file:
-      - path: .env
-        required: true
+      - .env
     deploy:
       resources:
         limits:
@@ -56,8 +55,7 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
     env_file:
-      - path: .env
-        required: true
+      - .env
     ports:
       - "${DB_PORT_EXTERNAL}:${DB_PORT_INTERNAL}"
     healthcheck:
