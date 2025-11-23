@@ -4,6 +4,8 @@ routers for incident
 
 from uuid import UUID
 #import structlog
+from app.core.async_logger import ainfo, aerror
+from app.core.structlog_configure import with_location
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.incident import (
@@ -28,17 +30,18 @@ router = APIRouter()
 
 
 @router.get("", summary="Get incidents")
+@with_location
 async def get_incidents(
     session: AsyncSession = Depends(connection()),
     filters: SchemaIncidentFilter = Depends(),
 ):
     """получение всех инцидентов"""
-    #logger.info("Get incidents", filters=filters)
+    #await ainfo("Get incidents", filters=filters)
     incident = await find_many_incident(
         filters=filters,
         session=session,
     )
-    #logger.info("Geted incidents", filters=filters)
+    #await ainfo("Geted incidents", filters=filters)
     return incident
 
 
@@ -48,12 +51,12 @@ async def create_incident(
     session: AsyncSession = Depends(connection()),
 ):
     """добавить новый инцидент"""
-    #logger.info("Add incident", data=data)
+    #await ainfo("Add incident", data=data)
     incident = await add_one_incident(
         data=data,
         session=session,
     )
-    #logger.info("Added incident", data=data)
+    #await ainfo("Added incident", data=data)
     return incident
 
 

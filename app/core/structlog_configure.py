@@ -93,10 +93,16 @@ def unify_log_level(logger, method_name, event_dict):  # pylint: disable=unused-
 def configure_logging():
     log_level = logging.DEBUG if settings.DEBUG else logging.INFO
 
+    # logging.basicConfig(
+    #     format="%(message)s",
+    #     stream=sys.stdout,
+    #     level=log_level,
+    # )
+
     logging.basicConfig(
         format="%(message)s",
-        stream=sys.stdout,
         level=log_level,
+        handlers=[logging.FileHandler("/dev/null")],
     )
 
     structlog.configure(
@@ -104,19 +110,19 @@ def configure_logging():
             merge_contextvars,
             structlog.stdlib.add_log_level,
             unify_log_level,
-            CallsiteParameterAdder(
-                [
-                    CallsiteParameter.FILENAME,
-                    CallsiteParameter.FUNC_NAME,
-                    CallsiteParameter.LINENO,
-                ]
-            ),
+            # CallsiteParameterAdder(
+            #     [
+            #         CallsiteParameter.FILENAME,
+            #         CallsiteParameter.FUNC_NAME,
+            #         CallsiteParameter.LINENO,
+            #     ]
+            # ),
             structlog.stdlib.add_logger_name,
             structlog.stdlib.filter_by_level,
             structlog.processors.TimeStamper(fmt="iso"),
             add_worker_pid,  # PID воркера
-            structlog.processors.dict_tracebacks,
-            ordered_json_processor,
+            structlog.processors.dict_tracebacks, # traceback становится частью JSON и виден в Kibane
+            #ordered_json_processor,
             structlog.processors.JSONRenderer(ensure_ascii=False),
         ],
         context_class=dict,
@@ -124,3 +130,26 @@ def configure_logging():
         wrapper_class=structlog.stdlib.BoundLogger,
         cache_logger_on_first_use=True,
     )
+
+
+from pathlib import Path
+from functools import wraps
+
+
+def with_location(func):
+    filename = Path(func.__code__.co_filename).name
+    lineno = func.__code__.co_firstlineno
+    func_name = func.__name__
+
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        structlog.contextvars.bind_contextvars(
+            filename=filename,
+            func_name=func_name,
+            lineno=lineno,
+        )
+        try:
+            return await func(*args, **kwargs)
+        finally:
+            structlog.contextvars.unbind_contextvars("filename", "func_name", "lineno")
+    return wrapper

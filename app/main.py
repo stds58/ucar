@@ -7,30 +7,42 @@
 Пример запуска:
     python -m uvicorn app.main:app --host 0.0.0.0 --port 80
 """
-
+from contextlib import asynccontextmanager
+import asyncio
 #import logging
 #import structlog
+from app.core.async_logger import ainfo, aerror, awarning
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.base_router import v1_router
 from app.core.config import settings
-#from app.core.structlog_configure import configure_logging
+from app.core.structlog_configure import configure_logging
 #from app.middleware.middleware_log import logging_middleware
+from app.core.async_logger import shutdown as shutdown_logger
 
 
 # Подавляем логи Uvicorn (оставляем только ошибки или полностью отключаем)
 # if not settings.DEBUG:
 #     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 #     logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
-#
-#
-# configure_logging()
-# logger = structlog.get_logger()
+
+
+configure_logging()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Это аналог "startup"
+    print("Приложение запускается...")
+    yield  # В этот момент работает приложение
+    # Это аналог "shutdown"
+    print("Приложение завершается...")
+    shutdown_logger()  # ← твой вызов
 
 
 app = FastAPI(
     debug=settings.DEBUG,
+    lifespan=lifespan,
     title="API",
     version="0.1.0",
     docs_url="/api/docs",

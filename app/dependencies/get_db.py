@@ -6,6 +6,7 @@ from typing import AsyncGenerator
 #import structlog
 from structlog.contextvars import bind_contextvars
 from sqlalchemy import text
+from app.core.async_logger import ainfo, aerror, awarning
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
@@ -43,32 +44,32 @@ def connection():
                 # )
                 yield session
             except IntegrityError as exc:
-                #logger.error("IntegrityError", error=str(exc))
+                await aerror("IntegrityError", error=str(exc))
                 if session.in_transaction():
                     await session.rollback()
                 raise IntegrityErrorException from exc
             except OperationalError as exc:
                 # Проверяем, является ли ошибка serialization failure
                 if hasattr(exc.orig, "pgcode") and exc.orig.pgcode == "40001":
-                    # logger.warning(
-                    #     "Serialization failure (40001), should retry transaction"
-                    # )
+                    await awarning(
+                        "Serialization failure (40001), should retry transaction"
+                    )
                     if session.in_transaction():
                         await session.rollback()
                     # Но здесь нельзя просто "повторить" — нужно перезапустить ВСЮ транзакцию
                     raise SerializationFailureException from exc
-                #logger.error("OperationalError (non-serialization)", error=str(exc))
+                await aerror("OperationalError (non-serialization)", error=str(exc))
                 raise DatabaseConnectionException from exc
             except (ConnectionRefusedError, OSError) as exc:
-                #logger.error("ConnectionRefusedError, OSError", error=str(exc))
+                await aerror("ConnectionRefusedError, OSError", error=str(exc))
                 raise CustomInternalServerException from exc
             except SQLAlchemyError as exc:
-                #logger.error(" SQLAlchemyError", error=str(exc))
+                await aerror(" SQLAlchemyError", error=str(exc))
                 if session.in_transaction():
                     await session.rollback()
                 raise SqlalchemyErrorException from exc
             except Exception as exc:
-                #logger.error("Other exception", error=str(exc))
+                await aerror("Other exception", error=str(exc))
                 if session.in_transaction():
                     await session.rollback()
                 raise

@@ -3,6 +3,7 @@
 from typing import ClassVar, Generic, List, Optional
 from uuid import UUID
 #import structlog
+from app.core.async_logger import ainfo, aerror
 from pydantic import BaseModel as PydanticModel
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -72,11 +73,11 @@ class BaseDAO(
         obj = result.scalar_one_or_none()
 
         if obj is None:
-            # logger.error(
-            #     "ObjectsNotFoundByIDError on update",
-            #     model_id=model_id,
-            #     error="Запрашиваемый объект не найден",
-            # )
+            await aerror(
+                "ObjectsNotFoundByIDError on update",
+                model_id=model_id,
+                error="Запрашиваемый объект не найден",
+            )
             raise ObjectsNotFoundByIDError
 
         return cls.pydantic_model.model_validate(obj, from_attributes=True)
