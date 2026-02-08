@@ -15,9 +15,13 @@ from app.crud.mixins.types import (
     UpdateSchemaType,
     FilterSchemaType,
 )
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
 
 
 #logger = structlog.get_logger()
+
+serialization_pool = ThreadPoolExecutor(max_workers=6)
 
 
 class BaseDAO(
@@ -40,10 +44,21 @@ class BaseDAO(
         query = cls._build_query(query, filters)
         result = await session.execute(query)
         results = result.unique().scalars().all()
-        return [
-            cls.pydantic_model.model_validate(obj, from_attributes=True)
-            for obj in results
-        ]
+
+        # return [
+        #     cls.pydantic_model.model_validate(obj, from_attributes=True)
+        #     for obj in results
+        # ]
+
+        loop = asyncio.get_running_loop()
+        # Выполняем сериализацию в отдельном потоке
+        return await loop.run_in_executor(
+            serialization_pool,
+            lambda: [
+                cls.pydantic_model.model_validate(obj, from_attributes=True)
+                for obj in results
+            ]
+        )
 
     @classmethod
     async def add_one(

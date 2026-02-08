@@ -19,10 +19,23 @@ def create_session_factory(database_url: str):
     #engine = create_async_engine(database_url)
     engine = create_async_engine(
         database_url,
-        pool_size=13,  # количество соединений в пуле
-        max_overflow=3,  # количество "переполненных" соединений
+        pool_size=13,  #13 количество соединений в пуле
+        max_overflow=3,  #3 количество "переполненных" соединений
         #pool_pre_ping=True,  # проверять соединение перед использованием
+        # SQLAlchemy выполняет дополнительный запрос к БД SELECT 1; Гарантирует, что соединение живое, Но добавляет ~1–2 мс к каждому запросу
         #pool_recycle=300,  # пересоздавать соединение каждые 300 секунд
+        # connect_args={
+        #     "keepalives": 1,
+        #     "keepalives_idle": 60,
+        #     "keepalives_interval": 10,
+        #     "keepalives_count": 5,
+        # },
+        # избыточны для Dockerа
+        # В локальной сети или Docker:
+        #
+        #     TCP-соединения не обрываются
+        #     Keepalive-пакеты не нужны
+        #     Они только увеличивают overhead
     )
     return async_sessionmaker(engine, expire_on_commit=False)
 

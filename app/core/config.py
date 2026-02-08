@@ -28,15 +28,20 @@ class Settings(BaseSettings):
     DB_PORT_INTERNAL: int
 
     @property
+    def DATABASE_DRIVER(self):
+        return "asyncpg"
+        #return "psycopg"
+
+    @property
     def DATABASE_URL(self) -> str:  # pylint: disable=invalid-name
         """создать строку подключения для посгреса"""
         if settings.DEBUG:
             return (
-                f"postgresql+asyncpg://{settings.DB_USER}:{settings.DB_PASSWORD}@"
+                f"postgresql+{self.DATABASE_DRIVER}://{settings.DB_USER}:{settings.DB_PASSWORD}@"
                 f"{settings.DB_HOST}:{settings.DB_PORT_EXTERNAL}/{settings.DB_NAME}"
             )
         return (
-            f"postgresql+asyncpg://{settings.DB_USER}:{settings.DB_PASSWORD}@"
+            f"postgresql+{self.DATABASE_DRIVER}://{settings.DB_USER}:{settings.DB_PASSWORD}@"
             f"{settings.DB_HOST}:{settings.DB_PORT_INTERNAL}/{settings.DB_NAME}"
         )
 
