@@ -127,3 +127,21 @@ load-test  | Transfer/sec:     12.75MB
 load-test exited with code 0
 ```
 
+```text
+asyncpg с pgbouncer
+load-test  | Running 10m test @ http://ucar-app:8000/v1/incident
+load-test  |   6 threads and 78 connections
+load-test  |   Thread Stats   Avg      Stdev     Max   +/- Stdev
+load-test  |     Latency    85.71ms   25.37ms   1.14s    74.57%                                                                                                                                                                     
+load-test  |     Req/Sec   152.58     23.40   232.00     73.47%                                                                                                                                                                     
+load-test  |   Latency Distribution                                                                                                                                                                                                 
+load-test  |      50%   87.08ms                                                                                                                                                                                                     
+load-test  |      75%   98.92ms                                                                                                                                                                                                     
+load-test  |      90%  111.27ms                                                                                                                                                                                                     
+load-test  |      99%  144.56ms                                                                                                                                                                                                     
+load-test  |   543944 requests in 10.00m, 9.44GB read                                                                                                                                                                               
+load-test  |   Socket errors: connect 0, read 0, write 0, timeout 79                                                                                                                                                                
+load-test  | Requests/sec:    906.47
+load-test  | Transfer/sec:     16.10MB                                                                                                                                                                                              
+load-test exited with code 0
+```

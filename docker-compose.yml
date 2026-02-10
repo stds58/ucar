@@ -4,15 +4,10 @@ services:
     profiles:
       - load-test
     image: williamyeh/wrk
-    command: ["-t", "6", "-c", "78", "-d", "600s", "--latency", "http://ucar-app:8000/v1/incident"]
+    command: ["-t", "6", "-c", "96", "-d", "20s", "--latency", "http://ucar-app:8000/v1/incident"]
     depends_on:
       ucar-app:
         condition: service_started
-    logging:
-      driver: "gelf"
-      options:
-        gelf-address: "udp://172.21.0.6:5000"
-        tag: "fastapi"
     network_mode: service:ucar-app
 
   ucar-app:
@@ -36,8 +31,7 @@ services:
       ucar-db:
         condition: service_healthy
     networks:
-      ucar_network:
-        ipv4_address: 174.21.0.2
+      - ucar_network
     restart: unless-stopped
 
   ucar-db:
@@ -54,6 +48,8 @@ services:
           memory: '4g'
     volumes:
       - pg_data:/var/lib/postgresql/data
+      - ./postgres_config/postgresql.conf:/etc/postgresql/postgresql.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
     env_file:
       - .env
     ports:
@@ -64,9 +60,37 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      ucar_network:
-        ipv4_address: 174.21.0.3
+      - ucar_network
     restart: unless-stopped
+
+  pgbouncer:
+    container_name: ucar-pgbouncer
+    image: bitnami/pgbouncer:latest
+    environment:
+      # Настройки подключения к PostgreSQL
+      POSTGRESQL_HOST: "ucar-db"
+      POSTGRESQL_PORT_NUMBER: ${DB_PORT_INTERNAL}
+      POSTGRESQL_USERNAME: ${DB_USER}
+      POSTGRESQL_PASSWORD: ${DB_PASSWORD}
+
+      # Настройки pgbouncer
+      PGBOUNCER_DATABASE: ${DB_NAME}
+      PGBOUNCER_AUTH_USER: ${DB_USER}
+      PGBOUNCER_AUTH_PASSWORD: ${DB_PASSWORD}
+      PGBOUNCER_POOL_MODE: transaction
+      PGBOUNCER_MAX_CLIENT_CONN: 1000    # макс клиентов к pgbouncer
+      PGBOUNCER_DEFAULT_POOL_SIZE: 25    # число одновременных транзакций, которые PostgreSQL может эффективно обрабатывать. = (1.5 – 2.5) × число ядер
+      PGBOUNCER_RESERVE_POOL_SIZE: 5     # резерв при пике
+      PGBOUNCER_IGNORE_STARTUP_PARAMETERS: extra_float_digits # управляет точностью вывода чисел с плавающей точкой.
+      #чтобы избежать потери точности при сериализации → десериализации.
+      #Библиотека asyncpg всегда отправляет extra_float_digits=3
+    ports:
+      - "6435:6432"
+    depends_on:
+      ucar-db:
+        condition: service_healthy
+    networks:
+      - ucar_network
 
 volumes:
   pg_data:
@@ -75,8 +99,3 @@ volumes:
 networks:
   ucar_network:
     driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 174.21.0.0/24
-          gateway: 174.21.0.1

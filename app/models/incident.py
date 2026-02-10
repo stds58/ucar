@@ -13,11 +13,11 @@ class Incident(Base):
     )
     source: Mapped[SourceDomain] = mapped_column(SQLEnum(SourceDomain), nullable=False)
 
-    def __str__(self):
-        return f"{self.status.value} from {self.source.value}"
-
-    def __repr__(self):
-        return (
-            f"<{self.__class__.__name__} "
-            f"(id={self.id}, status={self.status.value}, source={self.source.value})>"
-        )
+    # def __str__(self):
+    #     return f"{self.status.value} from {self.source.value}"
+    #
+    # def __repr__(self):
+    #     return (
+    #         f"<{self.__class__.__name__} "
+    #         f"(id={self.id}, status={self.status.value}, source={self.source.value})>"
+    #     )

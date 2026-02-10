@@ -38,12 +38,20 @@ class Settings(BaseSettings):
         if settings.DEBUG:
             return (
                 f"postgresql+{self.DATABASE_DRIVER}://{settings.DB_USER}:{settings.DB_PASSWORD}@"
-                f"{settings.DB_HOST}:{settings.DB_PORT_EXTERNAL}/{settings.DB_NAME}"
+                f"pgbouncer:6435/{settings.DB_NAME}"
             )
+            # return (
+            #     f"postgresql+{self.DATABASE_DRIVER}://{settings.DB_USER}:{settings.DB_PASSWORD}@"
+            #     f"{settings.DB_HOST}:{settings.DB_PORT_EXTERNAL}/{settings.DB_NAME}"
+            # )
         return (
             f"postgresql+{self.DATABASE_DRIVER}://{settings.DB_USER}:{settings.DB_PASSWORD}@"
-            f"{settings.DB_HOST}:{settings.DB_PORT_INTERNAL}/{settings.DB_NAME}"
+            f"pgbouncer:6432/{settings.DB_NAME}"
         )
+        # return (
+        #     f"postgresql+{self.DATABASE_DRIVER}://{settings.DB_USER}:{settings.DB_PASSWORD}@"
+        #     f"{settings.DB_HOST}:{settings.DB_PORT_INTERNAL}/{settings.DB_NAME}"
+        # )
 
     model_config = ConfigDict(extra="ignore")
 
