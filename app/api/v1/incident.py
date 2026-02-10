@@ -22,11 +22,52 @@ from app.services.incident import (
 )
 from app.dependencies.get_db import connection
 
+from asyncio import Lock
+from time import monotonic
+from typing import Optional
 
 #logger = structlog.get_logger()
 
+# Глобальные переменные на воркер
+_incidents_cache = None
+_incidents_cache_time = 0
+_cache_lock: Optional[Lock] = None
+CACHE_TTL = 10.0
 
 router = APIRouter()
+
+
+
+@router.get("/dummy", summary="Get dummy incidents")
+async def dummy():
+    return [{"id": i, "name": "test"} for i in range(100)]
+
+
+@router.get("/cache", summary="Get cache incidents")
+@with_location
+async def get_cache_incidents(
+    session: AsyncSession = Depends(connection()),
+    filters: SchemaIncidentFilter = Depends(),
+):
+    global _incidents_cache, _incidents_cache_time, _cache_lock
+
+    now = monotonic()
+    if _incidents_cache is not None and (now - _incidents_cache_time) < CACHE_TTL:
+        return _incidents_cache
+
+    # Создаём lock при первом обращении (внутри event loop)
+    if _cache_lock is None:
+        _cache_lock = Lock()
+
+    async with _cache_lock:
+        now = monotonic()
+        if _incidents_cache is not None and (now - _incidents_cache_time) < CACHE_TTL:
+            return _incidents_cache
+
+        _incidents_cache = await find_many_incident(filters=filters, session=session)
+        _incidents_cache_time = monotonic()
+
+    return _incidents_cache
 
 
 @router.get("", summary="Get incidents")
