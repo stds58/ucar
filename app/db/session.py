@@ -22,6 +22,10 @@ def create_session_factory(database_url: str):
         pool_size=13,  #13 количество соединений в пуле
         max_overflow=3,  #3 количество "переполненных" соединений
         echo=False,
+        connect_args={
+            "prepared_statement_cache_size": 0,
+            "statement_cache_size": 0,
+        },
 
         #pool_pre_ping=True,  # проверять соединение перед использованием
         # SQLAlchemy выполняет дополнительный запрос к БД SELECT 1; Гарантирует, что соединение живое, Но добавляет ~1–2 мс к каждому запросу
