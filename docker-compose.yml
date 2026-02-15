@@ -74,7 +74,7 @@ services:
       PGBOUNCER_MAX_CLIENT_CONN: 1000    # макс клиентов к pgbouncer
       PGBOUNCER_MAX_DB_CONNECTIONS: 100
       PGBOUNCER_MIN_POOL_SIZE: 5
-      PGBOUNCER_DEFAULT_POOL_SIZE: 15    # число одновременных транзакций, которые PostgreSQL может эффективно обрабатывать. = (1.5 – 2.5) × число ядер
+      PGBOUNCER_DEFAULT_POOL_SIZE: 25    # число одновременных транзакций, которые PostgreSQL может эффективно обрабатывать. = (1.5 – 2.5) × число ядер
       PGBOUNCER_RESERVE_POOL_SIZE: 5     # резерв при пике
       PGBOUNCER_IGNORE_STARTUP_PARAMETERS: extra_float_digits # управляет точностью вывода чисел с плавающей точкой.
       #чтобы избежать потери точности при сериализации → десериализации.
