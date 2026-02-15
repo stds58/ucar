@@ -36,26 +36,56 @@ https://github.com/stds58/ucar.git
 
     docker exec ucar-pgbouncer cat /opt/bitnami/pgbouncer/conf/pgbouncer.ini
 
+- pool_mode
+
+
     В транзакционном режиме (pool_mode = transaction) PgBouncer не поддерживает PREPARE и PREPARED STATEMENTS
 
-
-psycopg[binary] — использует бинарные расширения (быстрее)
-psycopg[pool] — включает встроенный пул соединений (но SQLAlchemy использует свой, так что это опционально)
-sqlalchemy[asyncio]
-
-asyncpg alembic granian itsdangerous pydantic-settings pylint requests ruff sqlalchemy structlog "fastapi[standard]"
+- PGBOUNCER_DEFAULT_POOL_SIZE = 25
 
 
+    Это максимальное число одновременных (активных) соединений от PgBouncer к одной базе данных на один пользователь.
+    В вашем случае у вас одна БД (ucar_db) и один пользователь (admin), значит этот пул — глобальный для всех клиентов.
+    То есть PgBouncer не будет открывать больше 25 соединений к PostgreSQL одновременно для текущих транзакций.
+
+- PGBOUNCER_RESERVE_POOL_SIZE = 5
+
+
+    Это дополнительные соединения, которые PgBouncer может использовать в пиковые моменты, когда основной пул исчерпан.
+    Итого: максимум активных соединений = 25 + 5 = 30.
+
+    ⚠️ Но! Это не максимальное количество соединений вообще, а максимум одновременно используемых соединений к БД.
+ 
+- DEFAULT_POOL_SIZE + RESERVE_POOL_SIZE
+	
+
+    Одновременно активные соединения (те, что реально используются прямо сейчас).
+
+- MAX_DB_CONNECTIONS
+	
+
+    Общее количество соединений, которые PgBouncer может открыть к PostgreSQL-e
+    за всё время своей работы (включая простаивающие в пуле).
+
+**библиотеки**
+
+asyncpg alembic granian[uvloop] itsdangerous sqlalchemy[asyncio] "fastapi[standard]"
+
+- asyncpg — Асинхронный драйвер для PostgreSQL
+- asyncio — Встроенная библиотека Python для асинхронности
+- psycopg[binary,pool] — использует бинарные расширения (быстрее)
+- psycopg[pool] — включает встроенный пул соединений (но SQLAlchemy использует свой, так что это опционально)
+- sqlalchemy[asyncio]
+- FastAPI — Веб-фреймворк, работает асинхронно (async def , await) 
+- granian[uvloop] — ASGI сервер (как uvicorn , hypercorn)
+```text
 granian[uvloop]  Requests/sec:   3203.57
 granian          Requests/sec:   2919.04
-psycopg[binary,pool]
+```
 
-granian | ASGI сервер (как uvicorn , hypercorn)
-asyncio | Встроенная библиотека Python для асинхронности
-FastAPI | Веб-фреймворк, работает асинхронно (async def , await) 
-asyncpg | Асинхронный драйвер для PostgreSQL
+**wrk**
 
-
+```text
 command: ["-t", "2", "-c", "78", "-d", "20s", "--latency", "http://ucar-app:8000/v1/incident"]
 Флаг	Значение
 `-t 2`	**Количество потоков** (`threads`) — `wrk` использует **2 потока** для отправки запросов.
@@ -63,24 +93,23 @@ command: ["-t", "2", "-c", "78", "-d", "20s", "--latency", "http://ucar-app:8000
 `-d 20s`	**Длительность теста** (`duration`) — тест будет работать **20 секунд**.
 `--latency`	**Включить измерение латентности** — `wrk` будет **считать и показывать статистику задержек** (например, 50%, 90%, 99% перцентили).
 `http://ucar-app:8000/v1/incident`	**URL**, который тестируется.
+```
 
-
-логирование
+**логирование**
 https://habr.com/ru/articles/575454/
 
 
-ssh -A -i ~/.ssh/yandex_cloud_20250211 ubuntu@84.201.133.152
-docker compose --profile load-test up load-test
+**FastAPI оптимизации**
 
-FastAPI оптимизации:
+- Используйте uvicorn с несколькими воркерами
+- Включайте response_model для валидации
+- Применяйте FastAPI Cache
+- Используйте connection pooling
 
-    Используйте uvicorn с несколькими воркерами
-    Включайте response_model для валидации
-    Применяйте FastAPI Cache
-    Используйте connection pooling
+**результаты тестов**
 
-результаты тестов
-в бд 100 записей. /v1/incident отдаёт все 100
+- в бд 100 записей. /v1/incident отдаёт все 100
+
 ```text
 psycopg c pool_recycle=300
 load-test  | Running 10m test @ http://ucar-app:8000/v1/incident
