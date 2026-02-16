@@ -32,8 +32,10 @@ IGNORE_LIST = {
     "Thumbs.db",
     "__init__.py",
     "alembic/versions",
+    "ansible",
     "redis/data",
     "script.py.mako",
+    "terraform",
     "tree.py",
     "uv.lock",
 }

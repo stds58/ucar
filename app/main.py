@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
     # - инициализация Celery,
     # - проверка БД и т.д.
 
-    yield  # ← приложение работает здесь
+    yield
 
     # === SHUTDOWN ===
     print("Приложение завершается...")
