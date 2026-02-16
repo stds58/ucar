@@ -5,7 +5,7 @@ from uuid import UUID
 #import structlog
 from app.core.async_logger import ainfo, aerror
 from pydantic import BaseModel as PydanticModel
-from sqlalchemy import select, update
+from sqlalchemy import select, update, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.exceptions.base import ObjectsNotFoundByIDError
 from app.crud.mixins.query_mixin import QueryMixin
@@ -17,6 +17,7 @@ from app.crud.mixins.types import (
 )
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
+from app.db.asyncpg_pool import get_asyncpg_pool
 
 
 #logger = structlog.get_logger()
@@ -36,29 +37,58 @@ class BaseDAO(
     pydantic_model: ClassVar[type[PydanticModel]]
 
     @classmethod
-    async def find_many(
-        cls, session: AsyncSession, filters: Optional[FilterSchemaType] = None
+    async def find_many_orm(
+            cls, session: AsyncSession, filters: Optional[FilterSchemaType] = None
     ) -> List[PydanticModel]:
-        """найти по фильтру"""
+        """используем alchemy orm"""
         query = select(cls.model)
         query = cls._build_query(query, filters)
         result = await session.execute(query)
         results = result.unique().scalars().all()
 
-        # return [
-        #     cls.pydantic_model.model_validate(obj, from_attributes=True)
-        #     for obj in results
-        # ]
+        return [
+            cls.pydantic_model.model_validate(obj, from_attributes=True)
+            for obj in results
+        ]
+
+    @classmethod
+    async def find_many_raw_sql(cls, session: AsyncSession) -> List[PydanticModel]:
+        """используем alchemy core и asyncio.get_running_loop"""
+        result = await session.execute(
+            text("SELECT id, created_at, updated_at, description, "
+                 "LOWER(status::TEXT) AS status, "
+                 "LOWER(source::TEXT) AS source "
+                 "FROM incident")
+        )
+        rows = result.fetchall()
 
         loop = asyncio.get_running_loop()
         # Выполняем сериализацию в отдельном потоке
         return await loop.run_in_executor(
             serialization_pool,
             lambda: [
-                cls.pydantic_model.model_validate(obj, from_attributes=True)
-                for obj in results
+                cls.pydantic_model.model_validate(row._mapping)
+                for row in rows
             ]
         )
+
+    @classmethod
+    async def find_many_native(cls) -> List[dict]:
+        """используем get_asyncpg_pool"""
+        pool = await get_asyncpg_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch("""
+                        SELECT id, created_at, updated_at, description,
+                               status::TEXT AS status,
+                               source::TEXT AS source
+                        FROM incident
+                    """)
+        return [dict(r) for r in rows]
+
+    @classmethod
+    async def find_many_dummy(cls) -> List[dict]:
+        """выводит 100 словарей. посгрес не используется"""
+        return [{"id": i, "name": "test"} for i in range(100)]
 
     @classmethod
     async def add_one(

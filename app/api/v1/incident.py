@@ -16,7 +16,10 @@ from app.schemas.incident import (
 )
 
 from app.services.incident import (
-    find_many_incident,
+    find_many_incident_orm,
+    find_many_incident_raw_sql,
+    find_many_incident_native,
+    find_many_incident_dummy,
     add_one_incident,
     update_one_incident,
 )
@@ -37,13 +40,12 @@ CACHE_TTL = 10.0
 router = APIRouter()
 
 
-
-@router.get("/dummy", summary="Get dummy incidents")
+@router.get("/router-dummy", summary="Get dummy incidents")
 async def dummy():
     return [{"id": i, "name": "test"} for i in range(100)]
 
 
-@router.get("/cache", summary="Get cache incidents")
+@router.get("/native/cache", summary="Get cache incidents")
 @with_location
 async def get_cache_incidents(
     session: AsyncSession = Depends(connection()),
@@ -64,13 +66,13 @@ async def get_cache_incidents(
         if _incidents_cache is not None and (now - _incidents_cache_time) < CACHE_TTL:
             return _incidents_cache
 
-        _incidents_cache = await find_many_incident(filters=filters, session=session)
+        _incidents_cache = await find_many_incident_native()
         _incidents_cache_time = monotonic()
 
     return _incidents_cache
 
 
-@router.get("", summary="Get incidents")
+@router.get("/orm", summary="Get incidents")
 @with_location
 async def get_incidents(
     session: AsyncSession = Depends(connection()),
@@ -78,11 +80,41 @@ async def get_incidents(
 ):
     """получение всех инцидентов"""
     #await ainfo("Get incidents", filters=filters)
-    incident = await find_many_incident(
+    incident = await find_many_incident_orm(
         filters=filters,
         session=session,
     )
     #await ainfo("Geted incidents", filters=filters)
+    return incident
+
+
+@router.get("/raw_sql", summary="Get incidents")
+@with_location
+async def get_incidents(
+    session: AsyncSession = Depends(connection()),
+):
+    """получение всех инцидентов"""
+    #await ainfo("Get incidents", filters=filters)
+    incident = await find_many_incident_raw_sql(session=session,)
+    #await ainfo("Geted incidents", filters=filters)
+    return incident
+
+
+@router.get("/native", summary="Get incidents")
+@with_location
+async def get_incidents():
+    """получение всех инцидентов"""
+    #await ainfo("Get incidents", filters=filters)
+    incident = await find_many_incident_native()
+    #await ainfo("Geted incidents", filters=filters)
+    return incident
+
+
+@router.get("/dummy", summary="Get incidents")
+@with_location
+async def get_incidents():
+    """получение всех инцидентов"""
+    incident = await find_many_incident_dummy()
     return incident
 
 

@@ -33,6 +33,18 @@ class Settings(BaseSettings):
         #return "psycopg"
 
     @property
+    def DATABASE_URL_ASYNC(self):
+        if settings.DEBUG:
+            return (
+                f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@"
+                f"pgbouncer:6435/{settings.DB_NAME}"
+            )
+        return (
+            f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@"
+            f"pgbouncer:6432/{settings.DB_NAME}"
+        )
+
+    @property
     def DATABASE_URL(self) -> str:  # pylint: disable=invalid-name
         """создать строку подключения для посгреса"""
         if settings.DEBUG:

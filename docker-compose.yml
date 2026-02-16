@@ -4,7 +4,12 @@ services:
     profiles:
       - load-test
     image: williamyeh/wrk
-    command: ["-t", "6", "-c", "96", "-d", "600s", "--latency", "http://ucar-app:8000/v1/incident"]
+    #command: ["-t", "6", "-c", "96", "-d", "60s", "--latency", "http://ucar-app:8000/v1/incident/orm"]
+    #command: ["-t", "6", "-c", "96", "-d", "60s", "--latency", "http://ucar-app:8000/v1/incident/raw_sql"]
+    #command: ["-t", "6", "-c", "96", "-d", "60s", "--latency", "http://ucar-app:8000/v1/incident/native"]
+    command: ["-t", "6", "-c", "96", "-d", "60s", "--latency", "http://ucar-app:8000/v1/incident/dummy"]
+    #command: ["-t", "6", "-c", "96", "-d", "60s", "--latency", "http://ucar-app:8000/v1/incident/router-dummy"]
+    #command: ["-t", "6", "-c", "96", "-d", "60s", "--latency", "http://ucar-app:8000/v1/incident/native/cache"]
     depends_on:
       ucar-app:
         condition: service_started

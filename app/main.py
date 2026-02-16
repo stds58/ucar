@@ -20,6 +20,7 @@ from app.core.config import settings
 from app.core.structlog_configure import configure_logging
 #from app.middleware.middleware_log import logging_middleware
 from app.core.async_logger import shutdown as shutdown_logger
+from app.db.asyncpg_pool import init_asyncpg_pool, close_asyncpg_pool
 
 
 # Подавляем логи Uvicorn (оставляем только ошибки или полностью отключаем)
@@ -30,14 +31,36 @@ from app.core.async_logger import shutdown as shutdown_logger
 
 configure_logging()
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Это аналог "startup"
+    # === STARTUP ===
     print("Приложение запускается...")
-    yield  # В этот момент работает приложение
-    # Это аналог "shutdown"
+
+    # Инициализация asyncpg-пула
+    await init_asyncpg_pool(
+        dsn=settings.DATABASE_URL_ASYNC,
+        min_size=5,
+        max_size=14
+    )
+
+    # Здесь можно добавить другие startup-действия:
+    # - подключение к Redis,
+    # - инициализация Celery,
+    # - проверка БД и т.д.
+
+    yield  # ← приложение работает здесь
+
+    # === SHUTDOWN ===
     print("Приложение завершается...")
-    shutdown_logger()  # ← твой вызов
+
+    # Закрытие пула
+    await close_asyncpg_pool()
+
+    # Завершение логгера
+    shutdown_logger()
+
+    # Другие cleanup-действия...
 
 
 app = FastAPI(

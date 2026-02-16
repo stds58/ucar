@@ -17,14 +17,25 @@ from app.schemas.incident import (
 #logger = structlog.get_logger()
 
 
-async def find_many_incident(
+async def find_many_incident_orm(
     filters: SchemaIncidentFilter, session: AsyncSession
 ) -> List[SchemaIncidentResponse]:
     #await ainfo("Get incidents", filters=filters)
-    result = await IncidentDAO.find_many(filters=filters, session=session)
+    result = await IncidentDAO.find_many_orm(filters=filters, session=session)
     #await ainfo("Geted incidents", filters=filters)
     return result
 
+async def find_many_incident_raw_sql(session: AsyncSession) -> List[SchemaIncidentResponse]:
+    result = await IncidentDAO.find_many_raw_sql(session=session)
+    return result
+
+async def find_many_incident_native() -> List[dict]:
+    result = await IncidentDAO.find_many_native()
+    return result
+
+async def find_many_incident_dummy() -> List[dict]:
+    result = await IncidentDAO.find_many_dummy()
+    return result
 
 async def add_one_incident(
     data: SchemaIncidentCreate, session: AsyncSession
