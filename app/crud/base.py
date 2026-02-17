@@ -52,7 +52,7 @@ class BaseDAO(
         ]
 
     @classmethod
-    async def find_many_raw_sql(cls, session: AsyncSession) -> List[PydanticModel]:
+    async def find_many_raw_sql(cls, session: AsyncSession) -> List[dict]:
         """используем alchemy core и asyncio.get_running_loop"""
         result = await session.execute(
             text("SELECT id, created_at, updated_at, description, "
@@ -63,14 +63,25 @@ class BaseDAO(
         rows = result.fetchall()
 
         loop = asyncio.get_running_loop()
-        # Выполняем сериализацию в отдельном потоке
-        return await loop.run_in_executor(
-            serialization_pool,
-            lambda: [
-                cls.pydantic_model.model_validate(row._mapping)
-                for row in rows
-            ]
-        )
+
+        # Функция, которая будет выполнена в отдельном потоке (ThreadPoolExecutor)
+        def serialize_rows():
+            output = []
+            for r in rows:
+                # r._mapping дает доступ к строке как к словарю
+                mapping = r._mapping
+                output.append({
+                    "id": str(mapping["id"]),  # UUID -> str (критично для orjson)
+                    "created_at": mapping["created_at"],
+                    "updated_at": mapping["updated_at"],
+                    "description": mapping["description"],
+                    "status": mapping["status"],  # Уже TEXT из SQL
+                    "source": mapping["source"]  # Уже TEXT из SQL
+                })
+            return output
+
+        # Запускаем тяжелую операцию сериализации в потоке, чтобы не блокировать event loop
+        return await loop.run_in_executor(serialization_pool, serialize_rows)
 
     @classmethod
     async def find_many_native(cls) -> List[dict]:

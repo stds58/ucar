@@ -73,14 +73,14 @@ https://github.com/stds58/ucar.git
 **сравнительная таблица**
 
 ```text
-тест          | rps
-router-dummy  | 8252.46
-dummy         | 8144.47
-orm           |  966.88
-raw_sql       | 1125.60
-native        | 1938.89
-native+cache  | 2138.67
-native-orjson | 5338.48
+тест           | rps
+router-dummy   | 8252.46
+dummy          | 8144.47
+orm            |  966.88
+raw_sql+orjson | 2539.19
+native         | 1938.89
+native+cache   | 2138.67
+native-orjson  | 5338.48
 ```
 
 **/v1/incident/router-dummy**
@@ -142,21 +142,22 @@ load-test  | Transfer/sec:     17.18MB
 ```
 
 **/v1/incident/raw_sql**
-- используем alchemy core и asyncio.get_running_loop
+- используем alchemy core и asyncio.get_running_loop и orjson для сериализации
 ```text
 load-test  | Running 1m test @ http://ucar-app:8000/v1/incident/raw_sql
 load-test  |   6 threads and 96 connections
 load-test  |   Thread Stats   Avg      Stdev     Max   +/- Stdev
-load-test  |     Latency    97.33ms   86.68ms 917.25ms   87.78%                                                                                                                                                                     
-load-test  |     Req/Sec   189.57     43.03   340.00     71.32%                                                                                                                                                                     
+load-test  |     Latency    39.44ms   34.63ms 639.03ms   92.04%                                                                                                                                                                     
+load-test  |     Req/Sec   449.65     86.57   666.00     80.35%                                                                                                                                                                     
 load-test  |   Latency Distribution                                                                                                                                                                                                 
-load-test  |      50%   53.12ms                                                                                                                                                                                                     
-load-test  |      75%  150.85ms                                                                                                                                                                                                     
-load-test  |      90%  213.32ms                                                                                                                                                                                                     
-load-test  |      99%  378.62ms                                                                                                                                                                                                     
-load-test  |   67641 requests in 1.00m, 1.17GB read                                                                                                                                                                                 
-load-test  | Requests/sec:   1125.60                                                                                                                                                                                                
-load-test  | Transfer/sec:     20.00MB   
+load-test  |      50%   29.25ms                                                                                                                                                                                                     
+load-test  |      75%   46.33ms                                                                                                                                                                                                     
+load-test  |      90%   66.57ms                                                                                                                                                                                                     
+load-test  |      99%  164.11ms                                                                                                                                                                                                     
+load-test  |   152928 requests in 1.00m, 2.80GB read
+load-test  |   Socket errors: connect 0, read 0, write 0, timeout 96                                                                                                                                                                
+load-test  | Requests/sec:   2539.19                                                                                                                                                                                                
+load-test  | Transfer/sec:     47.53MB   
 ```
 
 **/v1/incident/native**

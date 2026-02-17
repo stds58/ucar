@@ -97,9 +97,12 @@ async def get_incidents(
 ):
     """получение всех инцидентов"""
     #await ainfo("Get incidents", filters=filters)
-    incident = await find_many_incident_raw_sql(session=session,)
+    incident_data = await find_many_incident_raw_sql(session=session,)
     #await ainfo("Geted incidents", filters=filters)
-    return incident
+    return Response(
+        content=orjson.dumps(incident_data),
+        media_type="application/json"
+    )
 
 
 @router.get("/native", summary="Get incidents")

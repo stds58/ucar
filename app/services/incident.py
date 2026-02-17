@@ -25,7 +25,7 @@ async def find_many_incident_orm(
     #await ainfo("Geted incidents", filters=filters)
     return result
 
-async def find_many_incident_raw_sql(session: AsyncSession) -> List[SchemaIncidentResponse]:
+async def find_many_incident_raw_sql(session: AsyncSession) -> List[dict]:
     result = await IncidentDAO.find_many_raw_sql(session=session)
     return result
 
