@@ -40,8 +40,8 @@ async def lifespan(app: FastAPI):
     # Инициализация asyncpg-пула
     await asyncpg_db_client.connect(
         dsn=settings.DATABASE_URL_ASYNC,
-        min_size=5,
-        max_size=14
+        min_size=10,
+        max_size=30
     )
 
     # Здесь можно добавить другие startup-действия:
