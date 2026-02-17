@@ -1,27 +1,36 @@
 import asyncpg
-from typing import Optional
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Optional
 
-_asyncpg_pool: Optional[asyncpg.Pool] = None
 
-async def get_asyncpg_pool() -> asyncpg.Pool:
-    global _asyncpg_pool
-    if _asyncpg_pool is None:
-        raise RuntimeError("Asyncpg pool not initialized")
-    return _asyncpg_pool
+class AsyncPGDatabase:
+    def __init__(self):
+        self._pool: Optional[asyncpg.Pool] = None
 
-async def init_asyncpg_pool(dsn: str, min_size: int = 10, max_size: int = 80):
-    global _asyncpg_pool
-    _asyncpg_pool = await asyncpg.create_pool(
-        dsn=dsn,
-        min_size=min_size,
-        max_size=max_size,
-        command_timeout=5,
-        # Важно для PgBouncer в transaction mode:
-        statement_cache_size=0,  # отключает prepared statements
-    )
+    async def connect(self, dsn: str, min_size: int = 10, max_size: int = 80):
+        if self._pool is not None:
+            return  # Уже подключено
 
-async def close_asyncpg_pool():
-    global _asyncpg_pool
-    if _asyncpg_pool:
-        await _asyncpg_pool.close()
-        _asyncpg_pool = None
+        self._pool = await asyncpg.create_pool(
+            dsn=dsn,
+            min_size=min_size,
+            max_size=max_size,
+            command_timeout=5,
+            statement_cache_size=0,  # Критично для PgBouncer
+        )
+
+    async def disconnect(self):
+        if self._pool:
+            await self._pool.close()
+            self._pool = None
+
+    @asynccontextmanager
+    async def get_connection(self) -> AsyncGenerator[asyncpg.Connection, None]:
+        if self._pool is None:
+            raise RuntimeError("Pool not initialized. Call connect() first.")
+        async with self._pool.acquire() as conn:
+            yield conn
+
+
+# Создаем единственный экземпляр для всего приложения
+asyncpg_db_client = AsyncPGDatabase()

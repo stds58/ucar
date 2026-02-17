@@ -20,7 +20,7 @@ from app.core.config import settings
 from app.core.structlog_configure import configure_logging
 #from app.middleware.middleware_log import logging_middleware
 from app.core.async_logger import shutdown as shutdown_logger
-from app.db.asyncpg_pool import init_asyncpg_pool, close_asyncpg_pool
+from app.db.asyncpg_pool import asyncpg_db_client
 
 
 # Подавляем логи Uvicorn (оставляем только ошибки или полностью отключаем)
@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
     print("Приложение запускается...")
 
     # Инициализация asyncpg-пула
-    await init_asyncpg_pool(
+    await asyncpg_db_client.connect(
         dsn=settings.DATABASE_URL_ASYNC,
         min_size=5,
         max_size=14
@@ -55,7 +55,7 @@ async def lifespan(app: FastAPI):
     print("Приложение завершается...")
 
     # Закрытие пула
-    await close_asyncpg_pool()
+    await asyncpg_db_client.disconnect()
 
     # Завершение логгера
     shutdown_logger()

@@ -6,7 +6,7 @@ from uuid import UUID
 #import structlog
 from app.core.async_logger import ainfo, aerror
 from app.core.structlog_configure import with_location
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.incident import (
     SchemaIncidentResponse,
@@ -28,6 +28,8 @@ from app.dependencies.get_db import connection
 from asyncio import Lock
 from time import monotonic
 from typing import Optional
+import orjson
+
 
 #logger = structlog.get_logger()
 
@@ -109,6 +111,15 @@ async def get_incidents():
     #await ainfo("Geted incidents", filters=filters)
     return incident
 
+@router.get("/native-orjson", summary="Get incidents")
+@with_location
+async def get_incidents():
+    """получение всех инцидентов"""
+    incident_data = await find_many_incident_native()
+    return Response(
+        content=orjson.dumps(incident_data),
+        media_type="application/json"
+    )
 
 @router.get("/dummy", summary="Get incidents")
 @with_location

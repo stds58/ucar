@@ -73,13 +73,14 @@ https://github.com/stds58/ucar.git
 **сравнительная таблица**
 
 ```text
-тест         | rps
-router-dummy | 8252.46
-dummy        | 8144.47
-orm          |  966.88
-raw_sql      | 1125.60
-native       | 1938.89
-native+cache | 2138.67
+тест          | rps
+router-dummy  | 8252.46
+dummy         | 8144.47
+orm           |  966.88
+raw_sql       | 1125.60
+native        | 1938.89
+native+cache  | 2138.67
+native-orjson | 5338.48
 ```
 
 **/v1/incident/router-dummy**
@@ -195,6 +196,23 @@ load-test  | Requests/sec:   2138.67
 load-test  | Transfer/sec:     40.04MB 
 ```
 
+**/v1/incident/native-orjson**
+- используем get_asyncpg_pool и orjson для сериализации
+```text
+load-test  | Running 1m test @ http://ucar-app:8000/v1/incident/native-orjson
+load-test  |   6 threads and 96 connections
+load-test  |   Thread Stats   Avg      Stdev     Max   +/- Stdev
+load-test  |     Latency    41.12ms  153.22ms   1.94s    97.74%                                                                                                                                                                     
+load-test  |     Req/Sec     0.92k   232.14     1.55k    70.51%                                                                                                                                                                     
+load-test  |   Latency Distribution                                                                                                                                                                                                 
+load-test  |      50%   15.25ms                                                                                                                                                                                                     
+load-test  |      75%   27.29ms                                                                                                                                                                                                     
+load-test  |      90%   46.90ms                                                                                                                                                                                                     
+load-test  |      99%    1.01s                                                                                                                                                                                                      
+load-test  |   321146 requests in 1.00m, 5.87GB read                                                                                                                                                                                
+load-test  | Requests/sec:   5338.48                                                                                                                                                                                                
+load-test  | Transfer/sec:     99.93MB    
+```
 
 **pg bounser**
 

@@ -17,7 +17,7 @@ from app.crud.mixins.types import (
 )
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
-from app.db.asyncpg_pool import get_asyncpg_pool
+from app.db.asyncpg_pool import asyncpg_db_client
 
 
 #logger = structlog.get_logger()
@@ -75,15 +75,26 @@ class BaseDAO(
     @classmethod
     async def find_many_native(cls) -> List[dict]:
         """используем get_asyncpg_pool"""
-        pool = await get_asyncpg_pool()
-        async with pool.acquire() as conn:
+        async with asyncpg_db_client.get_connection() as conn:
             rows = await conn.fetch("""
                         SELECT id, created_at, updated_at, description,
                                status::TEXT AS status,
                                source::TEXT AS source
                         FROM incident
                     """)
-        return [dict(r) for r in rows]
+        #return [dict(r) for r in rows]
+        result = []
+        for r in rows:
+            result.append({
+                "id": str(r["id"]),  # Превращаем asyncpg UUID в строку
+                "created_at": r["created_at"],  # datetime обычно ок, но если ошибка - str(r["created_at"])
+                "updated_at": r["updated_at"],
+                "description": r["description"],
+                "status": r["status"],  # Уже TEXT из SQL
+                "source": r["source"]  # Уже TEXT из SQL
+            })
+
+        return result
 
     @classmethod
     async def find_many_dummy(cls) -> List[dict]:
